@@ -107,22 +107,22 @@ DeviceProcessEvents
 
 ---
 
-### 5. Defense Evasion: Temporary Folder Exclusion 
+### 5. Discovery: Privilege Enumeration 
 
-Searched for folder path exclusions added to Windows Defender configuration to prevent scanning of directories used for downloading and executing malicious tools. These exclusions allow malware to run undetected. The temporary folder C:\Users\KENJI~1.SAT\AppData\Local\Temp (i.e., kenji.sato's temp directory) was excluded from Defender scanning, allowing the attacker to freely download and execute malware.
+Searched for evidence of privilege enumeration and discovered that the attacker utilized the command "whoami.exe" /all" which provides comprehensive details about the security context of the compromised system including user name, security identifier (SID), group memberships, and privileges, enabling the attacker to understand their current access level.
 
 **Query used to locate events:**
 
 ```kql
-DeviceRegistryEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where RegistryKey has "Windows Defender" and RegistryKey has "Exclusions" and RegistryKey has "Paths"
-| project TimeGenerated, DeviceName, RegistryKey, RegistryValueName, RegistryValueData
-| sort by TimeGenerated asc
+DeviceProcessEvents
+| where DeviceName == "azuki-fileserver01"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where FileName == "whoami.exe"
+| project TimeGenerated, ProcessCommandLine
+| order by TimeGenerated asc
 
 ```
-<img width="2655" height="331" alt="POE_QR6" src="https://github.com/user-attachments/assets/bbebc01b-4949-43ce-b016-4ceec7c1d2c0" />
+<img width="1677" height="331" alt="CH_Q6" src="https://github.com/user-attachments/assets/e7882ca0-982d-4ad6-b458-2280585d3d61" />
 
 ---
 
