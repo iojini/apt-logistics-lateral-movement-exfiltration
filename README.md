@@ -380,26 +380,25 @@ The attack specifically targeted IT administrative credentials stored in IT-Admi
 
 | TTP ID | TTP Name | Description | Detection Relevance |
 |:--------:|:----------:|:-------------:|:---------------------:|
-| T1078.003 | Valid Accounts: Local Accounts | Compromised kenji.sato account used for initial RDP access | Identifies authentication with compromised credentials from external sources |
-| T1021.001 | Remote Services: Remote Desktop Protocol | External RDP connection from 88.97.178.12 established initial foothold | Detects unauthorized external RDP connections |
-| T1018 | Remote System Discovery | arp -a command executed to enumerate network neighbors | Indicates reconnaissance activity prior to lateral movement |
-| T1564.001 | Hide Artifacts: Hidden Files and Directories | attrib +h +s used to hide C:\ProgramData\WindowsCache staging directory | Identifies attempts to conceal malicious artifacts |
-| T1562.001 | Impair Defenses: Disable or Modify Tools | Windows Defender exclusions added for .bat, .ps1, .exe and Temp folder | Detects security control modifications |
-| T1105 | Ingress Tool Transfer | certutil.exe abused to download svchost.exe and mm.exe from 78.141.196.6 | Identifies LOLBin abuse for malware downloads |
-| T1053.005 | Scheduled Task/Job: Scheduled Task | "Windows Update Check" scheduled task created for persistence | Detects automated persistence mechanisms |
-| T1003.001 | OS Credential Dumping: LSASS Memory | Mimikatz sekurlsa::logonpasswords used to extract credentials | Identifies credential theft from LSASS |
-| T1560.001 | Archive Collected Data: Archive via Utility | Data compressed into export-data.zip for exfiltration | Detects data staging for exfiltration |
-| T1567.002 | Exfiltration Over Web Service: Exfiltration to Cloud Storage | Discord webhook used to exfiltrate compressed archive | Identifies data exfiltration to cloud services |
-| T1136.001 | Create Account: Local Account | Local administrator account "support" created as backdoor | Detects unauthorized account creation |
-| T1550.001 | Use Alternate Authentication Material: Application Access Token | cmdkey.exe used to store credentials for lateral movement | Identifies credential storage for remote access |
-| T1021.001 | Remote Services: Remote Desktop Protocol | mstsc.exe used to move laterally to file server 10.1.0.188 | Detects internal RDP connections for lateral movement |
-| T1071.001 | Application Layer Protocol: Web Protocols | C2 communications over HTTPS (port 443) to 78.141.196.6 | Indicates C2 channel over encrypted web traffic |
-| T1070.001 | Indicator Removal: Clear Windows Event Logs | wevtutil.exe used to systematically clear Security, System, and Application logs | Detects anti-forensic log tampering |
-| T1059.001 | Command and Scripting Interpreter: PowerShell | wupdate.ps1 PowerShell script used to automate attack chain | Identifies malicious PowerShell script execution |
+| T1078 | Valid Accounts: Local Accounts | Compromised fileadmin account used for lateral movement to file server | Identifies authentication with compromised credentials from external sources |
+| T1021.001 | Remote Services: Remote Desktop Protocol | External RDP connection from 159.26.106.98 and lateral movement via mstsc.exe to 10.1.0.108 | Detects unauthorized external RDP connections and internal lateral movement |
+| T1135 | Network Share Discovery | net share and net view \\10.1.0.188 executed to enumerate local and remote shares | Indicates reconnaissance activity prior to data collection |
+| T1033 | System Owner/User Discovery | whoami /all executed to enumerate current user privileges and group memberships | Identifies privilege enumeration prior to credential theft |
+| T1016 | System Network Configuration Discovery | ipconfig /all executed to enumerate network adapter settings and domain information | Indicates comprehensive network reconnaissance activity |
+| T1564.001 | Hide Artifacts: Hidden Files and Directories | attrib +h +s applied to C:\Windows\Logs\CBS staging directory | Identifies attempts to conceal malicious artifacts through file attribute modification |
+| T1074.001 | Data Staged: Local Data Staging | C:\Windows\Logs\CBS used to consolidate collected data before exfiltration | Detects data staging in non-standard locations mimicking system directories |
+| T1105 | Ingress Tool Transfer | certutil.exe abused to download ex.ps1 from 78.141.196.6:8080 | Identifies LOLBin abuse for malware downloads |
+| T1119 | Automated Collection | xcopy executed with /E /I /H /Y flags to recursively copy IT-Admin file share | Detects bulk data collection with attribute preservation |
+| T1560.001 | Archive Collected Data: Archive via Utility | tar used to compress credentials.tar.gz with gzip compression | Identifies data compression prior to exfiltration using cross-platform tools |
+| T1036.005 | Masquerading: Match Legitimate Name or Location | pd.exe (ProcDump renamed) and svchost.ps1 (PowerShell script) used to evade detection | Detects renamed tools and masqueraded filenames mimicking legitimate Windows components |
+| T1003.001 | OS Credential Dumping: LSASS Memory | pd.exe (ProcDump) dumped LSASS process memory (PID 876) to lsass.dmp | Identifies credential theft from LSASS memory using legitimate administrative tools |
+| T1567.002 | Exfiltration Over Web Service: Exfiltration to Cloud Storage | curl uploaded credentials.tar.gz to file.io cloud storage | Detects data exfiltration to temporary file hosting services |
+| T1547.001 | Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder | FileShareSync registry value created in HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run | Detects registry-based persistence mechanisms with deceptive value names |
+| T1070.003 | Indicator Removal: Clear Command History | ConsoleHost_history.txt deleted to remove PowerShell command evidence | Identifies anti-forensics activities targeting command history files |
 
 ---
 
-This table organizes the MITRE ATT&CK techniques observed during the investigation. The detection methods identified both the attack techniques and enabled confirmation of the threat actor's sophistication through multiple layers of obfuscation, persistence, and anti-forensics.
+This table organizes the MITRE ATT&CK techniques (TTPs) observed during the investigation. The detection methods identified both the attack techniques and enabled confirmation of the threat actor's sophistication through multiple layers of defense evasion, persistence, and anti-forensics.
 
 ---
 
