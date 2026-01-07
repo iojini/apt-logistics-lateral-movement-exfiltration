@@ -126,43 +126,41 @@ DeviceProcessEvents
 
 ---
 
-### 6. Defense Evasion: Download Utility Abuse
+### 6. Discovery: Network Configuration Command
 
-Searched for the use of built-in Windows tools with network download capabilities that may have been used during the attack and discovered that certutil.exe, a legitimate Windows certificate utility, was used by the attacker to download malware from http://78.141.196.6:8080/. Also, note that the -urlcache -f flags enable file downloads while evading security controls.
+Searched for evidence of network configuration enumeration and discovered that the attacker utilized the command ""ipconfig.exe" /all" to better understand the environment topology. This command reveals comprehensive network details including DNS servers, DHCP configuration, domain membership, MAC addresses, and all network adapters, providing the attacker with a complete picture of the network environment.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where AccountName == "kenji.sato" or InitiatingProcessAccountName == "kenji.sato"
-| where ProcessCommandLine has_any ("http://", "https://", ".exe", "download", "-o", "-outfile")
-| project TimeGenerated, DeviceName, FileName, ProcessCommandLine
-| sort by TimeGenerated asc
+| where DeviceName == "azuki-fileserver01"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where FileName == "ipconfig.exe"
+| project TimeGenerated, ProcessCommandLine
+| order by TimeGenerated asc
 
 ```
-<img width="2395" height="335" alt="POE_QR7" src="https://github.com/user-attachments/assets/6bdbb5cb-55b9-4058-ac05-a0d3b03e5f0b" />
+<img width="1720" height="275" alt="CH_Q7" src="https://github.com/user-attachments/assets/d58c65c0-8a78-4232-9407-3c0dc237fc69" />
 
 ---
 
-### 7. Persistence: Scheduled Task Name & Scheduled Task Target
+### 7. Defense Evasion: Directory Hiding Command
 
-Searched for the execution of scheduled task creation commands during the attack timeline since scheduled tasks provide reliable persistence across system reboots. In this case, the name of the scheduled task created for persistence was Windows Update Check. Note that the task name often attempts to blend in with legitimate Windows system maintenance. In addition, the task action was extracted from the scheduled task creation command line to reveal the exact persistence mechanism and malware location. The /tr parameter value indicates which executable runs at the scheduled time. The scheduled task was configured to execute C:\ProgramData\WindowsCache\svchost.exe, a malicious binary disguised as the legitimate Windows Host Process, ensuring automated re-execution after system reboots.
-
+Searched for evidence of the modification of file system attributes since this is a technique employed by attackers to hide directories. This analysis revealed that the attacker modified file attributes to hide their staging directory utilizing the command ""attrib.exe" +h +s C:\Windows\Logs\CBS" and made it appear as a protected Windows system component. This command sets both hidden (+h) and system (+s) attributes on the directory, causing it to blend in with legitimate Windows system folders. The CBS (Component-Based Servicing) folder name was chosen to appear as a legitimate Windows log directory.
+ 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where FileName == "schtasks.exe"
-| where ProcessCommandLine has "/create"
-| project TimeGenerated, DeviceName, ProcessCommandLine
-| sort by TimeGenerated asc
+| where DeviceName == "azuki-fileserver01"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where FileName == "attrib.exe"
+| project TimeGenerated, ProcessCommandLine
+| order by TimeGenerated asc
 
 ```
-<img width="2446" height="271" alt="POE_QR8" src="https://github.com/user-attachments/assets/385623e2-9556-4767-ab71-526db9d18644" />
+<img width="1703" height="286" alt="CH_Q8" src="https://github.com/user-attachments/assets/e2586234-e6de-4413-930f-e990e891da3b" />
 
 ---
 
