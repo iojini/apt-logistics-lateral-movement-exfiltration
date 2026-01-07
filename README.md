@@ -21,7 +21,7 @@ Azuki Import & Export Trading Co. experienced continued malicious activity appro
 
 The attacker returned approximately 72 hours after the initial compromise using a different IP address to evade detection. The analysis revealed that the IP address 159.26.106.98 was the attacker's return connection. Since it's distinct from the original compromise IP, it's likely that the attacker attempted to utilize infrastructure rotation as an evasion technique.
 
-**Queries used to locate events:**
+**Query used to locate events:**
 
 ```kql
 DeviceLogonEvents
@@ -37,22 +37,34 @@ DeviceLogonEvents
 
 ---
 
-### 2. Discovery: Network Reconnaissance
+### 2. Lateral Movement: Compromised Device
 
-Searched for evidence of network enumeration by focusing the search on arp commands since it's the most common command for enumerating network neighbors with hardware addresses. The command and argument used to enumerate network neighbours was arp -a. This command displays the Address Resolution Protocol (ARP) cache, showing IP addresses mapped to MAC (i.e., hardware) addresses of devices on the local network. It's also useful for revealing the local network topology for planning lateral movement.
+Searched for evidence of lateral movement and discovered multiple RDP connections to the IP address 10.1.0.108, which was then correlated with logon events to identify the device name. The attacker used Remote Desktop (mstsc.exe) from the compromised system (azuki-sl) to connect to IP address 10.1.0.108. Further investigation revealed that the attacker performed lateral movement from the compromised workstation to the organization's primary file server (i.e., azuki-fileserver01), positioning themselves to access sensitive business data.
 
-**Query used to locate events:**
+**Queries used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-19))
-| where FileName has "arp"
-| where ProcessCommandLine has "-a"
-| project TimeGenerated, FileName, ProcessCommandLine
-| sort by TimeGenerated asc
+| where DeviceName contains "azuki"
+| where FileName == "mstsc.exe"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| project TimeGenerated, ProcessCommandLine, DeviceName
+| order by TimeGenerated asc
 
 ```
-<img width="1840" height="263" alt="POE_QR3" src="https://github.com/user-attachments/assets/e670390f-ef41-42be-a5cb-702feb778b5a" />
+<img width="1811" height="416" alt="CH_Q2A" src="https://github.com/user-attachments/assets/809b1b6d-290a-469d-bd4e-36bc5d145b24" />
+
+---
+
+```kql
+DeviceLogonEvents
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where RemoteIP == "10.1.0.108"
+| project TimeGenerated, DeviceName, RemoteIP, AccountName
+| order by TimeGenerated asc
+
+```
+<img width="1786" height="929" alt="CH_Q2B" src="https://github.com/user-attachments/assets/ea68537c-539e-4168-9efa-dc8af73b68fb" />
 
 ---
 
