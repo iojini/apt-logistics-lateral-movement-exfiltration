@@ -87,23 +87,23 @@ DeviceProcessEvents
 
 ---
 
-### 4. Defense Evasion: File Extension Exclusions
+### 4. Discovery: Remote Share Enumeration
 
-Searched registry modifications to Windows Defender's exclusion settings to identify file extensions added by the attacker. Adding file extension exclusions prevents scanning of malicious files; thereby, revealing the scope of the defense evasion strategy. The attacker excluded .bat, .ps1, and .exe file extensions from Windows Defender scanning, allowing malicious scripts and executables to run undetected. A total of 3 file extensions were excluded.
+Searched for evidence of remote network share enumeration and discovered that the attacker utilized the command "net view \\10.1.0.188" to enumerate shares on a remote system (i.e., IP 10.1.0.188), expanding the attacker's knowledge of available data repositories across the network.
 
 **Query used to locate events:**
 
 ```kql
-DeviceRegistryEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where RegistryKey has "Windows Defender" and RegistryKey has "Exclusions"
-| where RegistryKey has "Extensions"
-| project TimeGenerated, DeviceName, RegistryKey, RegistryValueName, RegistryValueData
-| sort by TimeGenerated asc
+DeviceProcessEvents
+| where DeviceName == "azuki-fileserver01"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where FileName == "net.exe"
+| where ProcessCommandLine has "\\"
+| project TimeGenerated, ProcessCommandLine, FileName
+| order by TimeGenerated asc
 
 ```
-<img width="2307" height="382" alt="POE_QR5" src="https://github.com/user-attachments/assets/51e2123d-1f1a-41bd-9fb4-6b51c4464dd5" />
+<img width="1393" height="265" alt="CH_Q5" src="https://github.com/user-attachments/assets/6efb33b4-19f0-404d-86b9-71907c11c84b" />
 
 ---
 
