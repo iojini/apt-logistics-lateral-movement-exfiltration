@@ -1,4 +1,4 @@
-# Threat Hunt Report: Credential Theft and Data Exfiltration
+# Threat Hunt Report: File Server Breach and Multi-Stage Exfiltration
 
 ## Executive Summary
 
