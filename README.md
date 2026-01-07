@@ -362,7 +362,7 @@ The attack specifically targeted IT administrative credentials stored in IT-Admi
 | 2025-11-22 08:19:38 | Renamed Tool Deployment | pd.exe (renamed ProcDump) created in staging directory |
 | 2025-11-22 08:44:39 | Credential Dumping | pd.exe dumped LSASS memory (PID 876) to lsass.dmp |
 | 2025-11-22 09:54:27 | Data Exfiltration | curl.exe uploaded credentials.tar.gz to file.io |
-| 2025-11-22 10:50:82 | Persistence: Registry | FileShareSync value created in HKLM Run key launching svchost.ps1 |
+| 2025-11-22 02:10:50 | Persistence: Registry | FileShareSync value created in HKLM Run key launching svchost.ps1 |
 | 2025-11-22 12:27:53 | Return Access | External RDP connection from 159.26.106.98 using kenji.sato |
 | 2025-11-22 12:38:47 | Lateral Movement: RDP | mstsc.exe executed targeting 10.1.0.188 |
 | 2025-11-22 14:01:16 | Anti-Forensics | ConsoleHost_history.txt deleted to remove PowerShell command evidence |
