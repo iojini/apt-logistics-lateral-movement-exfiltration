@@ -298,30 +298,30 @@ DeviceProcessEvents
 
 ---
 
-### 15. Persistence: Registry Value Name
+### 15. Persistence: Registry Value Name & Beacon Filename
 
-Searched for evidence of persistence and discovered...
-
-target systems specified in remote access commands and discovered that the attacker targeted IP address 10.1.0.188 for lateral movement. Since lateral movement targets are selected based on their access to sensitive data or network privileges, identifying these targets can reveal attacker objectives. In addition, the attacker used mstsc.exe (Microsoft Terminal Services Client - the built-in Windows Remote Desktop client) for lateral movement. This Living Off The Land technique allows malicious RDP connections to blend seamlessly with legitimate IT administrative activity.
+Searched for evidence of persistence and discovered the creation of a registry Run key with a value name designed to appear as legitimate software (i.e., FileShareSync). This registry value name was likely chosen to appear as legitimate file synchronization software (i.e., a service that would be expected on a file server). The persistence mechanism launches a hidden PowerShell script on every system startup, ensuring the attacker maintains access even after system reboots or credential changes. In addition, the beacon script (i.e., svchost.ps1) was named after the legitimate Windows Service Host (svchost.exe) process in order to make the file appear legitimate in directory listings, reduce suspicion if discovered during casual system inspection, or blend with legitimate Windows processes in monitoring tools. The PowerShell script serves as a persistence beacon, likely establishing command-and-control connectivity or executing additional payloads on system startup.
 
 **Query used to locate events:**
 
 ```kql
-DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where FileName in ("cmdkey.exe", "mstsc.exe")
-| project TimeGenerated, FileName, ProcessCommandLine
-| sort by TimeGenerated desc
+DeviceRegistryEvents
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where DeviceName == "azuki-fileserver01"
+| where RegistryKey has "Run"
+| project TimeGenerated, RegistryKey, RegistryValueName, RegistryValueData
+| order by TimeGenerated asc
 
 ```
-<img width="2140" height="474" alt="POE_QR19" src="https://github.com/user-attachments/assets/a579c51e-e75b-478e-b81e-b29b879a0fbf" />
+<img width="2468" height="338" alt="CH_Q18" src="https://github.com/user-attachments/assets/217c2811-c18a-4e62-9c05-f9ff8fb79bc6" />
 
 ---
 
-### 15. XXX
+### 16. Anti-Forensics: History File Deletion
 
-Searched for target systems specified in remote access commands and discovered that the attacker targeted IP address 10.1.0.188 for lateral movement. Since lateral movement targets are selected based on their access to sensitive data or network privileges, identifying these targets can reveal attacker objectives. In addition, the attacker used mstsc.exe (Microsoft Terminal Services Client - the built-in Windows Remote Desktop client) for lateral movement. This Living Off The Land technique allows malicious RDP connections to blend seamlessly with legitimate IT administrative activity.
+Searched for file deletion events and discovered...
+
+target systems specified in remote access commands and discovered that the attacker targeted IP address 10.1.0.188 for lateral movement. Since lateral movement targets are selected based on their access to sensitive data or network privileges, identifying these targets can reveal attacker objectives. In addition, the attacker used mstsc.exe (Microsoft Terminal Services Client - the built-in Windows Remote Desktop client) for lateral movement. This Living Off The Land technique allows malicious RDP connections to blend seamlessly with legitimate IT administrative activity.
 
 **Query used to locate events:**
 
