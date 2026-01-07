@@ -319,22 +319,21 @@ DeviceRegistryEvents
 
 ### 16. Anti-Forensics: History File Deletion
 
-Searched for file deletion events and discovered...
-
-target systems specified in remote access commands and discovered that the attacker targeted IP address 10.1.0.188 for lateral movement. Since lateral movement targets are selected based on their access to sensitive data or network privileges, identifying these targets can reveal attacker objectives. In addition, the attacker used mstsc.exe (Microsoft Terminal Services Client - the built-in Windows Remote Desktop client) for lateral movement. This Living Off The Land technique allows malicious RDP connections to blend seamlessly with legitimate IT administrative activity.
+Searched for anti-forensics activities and discovered the deletion of the PowerShell command history file (i.e., ConsoleHost_history.txt). This file logs all interactive PowerShell commands across sessions and is commonly targeted by attackers to remove evidence of their activities. The deletion occurred after the completion of data exfiltration and persistence establishment, indicating a deliberate attempt to cover tracks.
 
 **Query used to locate events:**
 
 ```kql
-DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where FileName in ("cmdkey.exe", "mstsc.exe")
-| project TimeGenerated, FileName, ProcessCommandLine
-| sort by TimeGenerated desc
+DeviceFileEvents
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where DeviceName == "azuki-fileserver01"
+| where ActionType == "FileDeleted"
+| where FileName has "history"
+| project TimeGenerated, FileName, FolderPath, ActionType
+| order by TimeGenerated asc
 
 ```
-<img width="2140" height="474" alt="POE_QR19" src="https://github.com/user-attachments/assets/a579c51e-e75b-478e-b81e-b29b879a0fbf" />
+<img width="2667" height="282" alt="CH_Q20B" src="https://github.com/user-attachments/assets/2f6b774f-3802-4b6d-a66b-1bfbdec660be" />
 
 ---
 
