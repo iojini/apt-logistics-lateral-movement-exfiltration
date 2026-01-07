@@ -352,7 +352,7 @@ The attack specifically targeted IT administrative credentials stored in IT-Admi
 | Time (UTC) | Action Observed | Key Evidence |
 |:------------:|:-----------------:|:--------------:|
 | 2025-11-21 19:42:01 | Remote Share Enumeration | net.exe view \\10.1.0.188 executed to enumerate backup server |
-| 2025-11-22 00:40:09 | Privilege Enumeration | whoami.exe /all executed to enumerate security context |
+| 2025-11-22 00:42:24 | Privilege Enumeration | whoami.exe /all executed to enumerate security context |
 | 2025-11-22 00:42:24 | Network Configuration | ipconfig.exe /all executed to enumerate network settings |
 | 2025-11-22 00:55:43 | Defense Evasion: Directory Hiding | attrib.exe +h +s applied to C:\Windows\Logs\CBS staging directory |
 | 2025-11-22 00:56:47 | Script Download | certutil.exe downloaded ex.ps1 from 78.141.196.6:8080 |
