@@ -349,30 +349,29 @@ The attack specifically targeted IT administrative credentials stored in IT-Admi
 
 ## Timeline
 
-| Time (UTC) | Step | Action Observed | Key Evidence |
-|:------------:|:------:|:----------------:|:--------------:|
-| 2025-11-18 22:44:11 | 1 | Initial Access via RDP | External connection from 88.97.178.12 using kenji.sato credentials |
-| 2025-11-18 17:23:53 | 2 | Network Reconnaissance | arp -a command executed to enumerate local network |
-| 2025-11-19 19:05:33 | 3 | Defense Evasion - Staging | C:\ProgramData\WindowsCache directory created and hidden |
-| 2025-11-19 18:49:27 | 4 | Defense Evasion - Exclusions | Three file extensions (.bat, .ps1, .exe) excluded from Defender |
-| 2025-11-19 18:49:27 | 5 | Defense Evasion - Path Exclusion | C:\Users\KENJI~1.SAT\AppData\Local\Temp excluded from scanning |
-| 2025-11-19 18:49:48 | 6 | Script Deployment | wupdate.ps1 PowerShell script created in Temp directory |
-| 2025-11-19 19:06:58 | 7 | Malware Download | certutil.exe used to download svchost.exe from 78.141.196.6:8080 |
-| 2025-11-19 19:07:21 | 8 | Credential Tool Download | certutil.exe used to download mm.exe (Mimikatz) |
-| 2025-11-19 19:07:46 | 9 | Persistence - Scheduled Task | "Windows Update Check" task created for daily execution at 02:00 |
-| 2025-11-19 19:08:26 | 10 | Credential Dumping | mm.exe executed with sekurlsa::logonpasswords module |
-| 2025-11-19 19:09:21 | 11 | Data Exfiltration | export-data.zip uploaded to Discord webhook via curl.exe |
-| 2025-11-19 19:09:48 | 12 | Backdoor Account Creation | Local administrator account "support" created |
-| 2025-11-19 19:10:37 | 13 | Credential Storage for Lateral Movement | cmdkey.exe used to store fileadmin credentials for 10.1.0.188 |
-| 2025-11-19 19:10:41 | 14 | Lateral Movement | mstsc.exe launched to connect to file server (10.1.0.188) |
-| 2025-11-19 19:11:04 | 15 | C2 Communication | Malicious svchost.exe contacted 78.141.196.6:443 |
-| 2025-11-19 19:11:39 | 16 | Anti-Forensics - Security Log | wevtutil.exe used to clear Security event log |
-| 2025-11-19 19:11:43 | 17 | Anti-Forensics - System Log | wevtutil.exe used to clear System event log |
-| 2025-11-19 19:11:46 | 18 | Anti-Forensics - Application Log | wevtutil.exe used to clear Application event log |
+| Time (UTC) | Action Observed | Key Evidence |
+|:------------:|:-----------------:|:--------------:|
+| 2025-11-21 19:42:01 | Remote Share Enumeration | net.exe view \\10.1.0.188 executed to enumerate backup server |
+| 2025-11-22 00:40:09 | Privilege Enumeration | whoami.exe /all executed to enumerate security context |
+| 2025-11-22 00:42:24 | Network Configuration | ipconfig.exe /all executed to enumerate network settings |
+| 2025-11-22 00:55:43 | Defense Evasion: Directory Hiding | attrib.exe +h +s applied to C:\Windows\Logs\CBS staging directory |
+| 2025-11-22 00:56:47 | Script Download | certutil.exe downloaded ex.ps1 from 78.141.196.6:8080 |
+| 2025-11-22 03:57:51 | Credential File Discovery | IT-Admin-Passwords.csv accessed in IT-Admin file share |
+| 2025-11-22 05:21:07 | Recursive Data Copy | xcopy.exe copied IT-Admin share to staging directory |
+| 2025-11-22 05:31:30 | Compression | tar compressed IT-Admin data into credentials.tar.gz |
+| 2025-11-22 08:19:38 | Renamed Tool Deployment | pd.exe (renamed ProcDump) created in staging directory |
+| 2025-11-22 08:44:39 | Credential Dumping | pd.exe dumped LSASS memory (PID 876) to lsass.dmp |
+| 2025-11-22 09:54:27 | Data Exfiltration | curl.exe uploaded credentials.tar.gz to file.io |
+| 2025-11-22 10:50:82 | Persistence: Registry | FileShareSync value created in HKLM Run key launching svchost.ps1 |
+| 2025-11-22 12:27:53 | Return Access | External RDP connection from 159.26.106.98 using kenji.sato |
+| 2025-11-22 12:38:47 | Lateral Movement: RDP | mstsc.exe executed targeting 10.1.0.188 |
+| 2025-11-22 14:01:16 | Anti-Forensics | ConsoleHost_history.txt deleted to remove PowerShell command evidence |
+| 2025-11-24 14:40:54 | Lateral Movement: Logon | fileadmin account logged into azuki-fileserver01 from 10.1.0.108 |
+| 2025-11-24 14:42:01 | Local Share Enumeration | net.exe share executed on azuki-fileserver01 |
 
 ---
 
-**Note:** Network reconnaissance was observed at 17:23:53 on November 18, prior to the external RDP connection at 22:44:11. This suggests potential earlier compromise through an unidentified vector. The timeline reflects logical attack progression rather than strict chronological order.
+**Note:** Network reconnaissance occurred on November 21, prior to the external RDP connection observed on November 22, suggesting potential earlier compromise through an unidentified vector.
 
 ---
 
