@@ -37,9 +37,9 @@ DeviceLogonEvents
 
 ---
 
-### 2. Lateral Movement: Compromised Device
+### 2. Lateral Movement: Compromised Device & Compromised Account
 
-Searched for evidence of lateral movement and discovered multiple RDP connections to the IP address 10.1.0.108, which was then correlated with logon events to identify the device name. The attacker used Remote Desktop (mstsc.exe) from the compromised system (azuki-sl) to connect to IP address 10.1.0.108. Further investigation revealed that the attacker performed lateral movement from the compromised workstation to the organization's primary file server (i.e., azuki-fileserver01), positioning themselves to access sensitive business data.
+Searched for evidence of lateral movement and discovered multiple RDP connections to the IP address 10.1.0.108, which was then correlated with logon events to identify the device name. The attacker used Remote Desktop (mstsc.exe) from the compromised system (azuki-sl) to connect to IP address 10.1.0.108. Further investigation revealed that the attacker performed lateral movement from the compromised workstation to the organization's primary file server (i.e., azuki-fileserver01), positioning themselves to access sensitive business data. In addition, the investigation also revealed that the attacker moved laterally to the file server using the fileadmin account. Compromising an administrative account with file management privileges also provides the attacker with elevated access to file shares and sensitive data.
 
 **Queries used to locate events:**
 
@@ -68,24 +68,22 @@ DeviceLogonEvents
 
 ---
 
-### 3. Defense Evasion: Malware Staging Directory
+### 3. Discovery: Share Enumeration
 
-Searched for the the primary staging directory where malware was stored and found that the primary staging directory C:\ProgramData\WindowsCache was created and hidden using attrib commands. 
+Searched for evidence of network share enumeration and discovered that the attacker executed the net share command to enumerate local network shares on the compromised file server. This command reveals all shared folders on the local system, allowing the attacker to identify sensitive data repositories for collection.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated  between (datetime(2025-11-18) .. datetime(2025-11-20))
-| where DeviceName == "azuki-sl"
-| where AccountName == "kenji.sato"
-| where FileName in ("cmd.exe", "powershell.exe", "attrib.exe")
-| where ProcessCommandLine has_any ("mkdir", "New-Item", "attrib", "md ")
-| project TimeGenerated, FileName, ProcessCommandLine, DeviceName, AccountName
-| sort by TimeGenerated asc
+| where DeviceName == "azuki-fileserver01"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-25))
+| where ProcessCommandLine has "net" and ProcessCommandLine has "share"
+| project TimeGenerated, ProcessCommandLine, FileName, AccountName
+| order by TimeGenerated asc
 
 ```
-<img width="2535" height="256" alt="POE_QR4" src="https://github.com/user-attachments/assets/8dad5f3f-dc0c-4437-8f48-c80ce44cb8a7" />
+<img width="2069" height="273" alt="CH_Q4A" src="https://github.com/user-attachments/assets/308e0369-64bf-49af-8cb7-96e69f9722d7" />
 
 ---
 
