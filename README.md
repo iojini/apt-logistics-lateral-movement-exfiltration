@@ -2,11 +2,11 @@
 
 ## Executive Summary
 
-Azuki Import & Export Trading Co. experienced anomalous network activity and suspicious process executions between November 18-19, 2025. The activity originated from external RDP connections and escalated into a multi-stage attack involving credential theft, lateral movement, and data exfiltration. The investigation revealed behavior consistent with ADE SPIDER (APT-SL44), a financially motivated threat actor known for targeting logistics companies across East Asia. The attacker employed multiple techniques including defense evasion, persistence mechanisms, and anti-forensic measures to maintain access and extract sensitive data. This investigation reconstructs the complete attack timeline and documents the threat actor's tactics, techniques, and procedures.
+Azuki Import & Export Trading Co. experienced continued malicious activity approximately 72 hours after the initial compromise that occurred between November 18-19, 2025. The attacker returned on November 21, 2025, conducted lateral movement to the organization's file server, and executed a sophisticated data exfiltration operation. The investigation revealed behavior consistent with ADE SPIDER (APT-SL44, SilentLynx), involving lateral movement using compromised credentials, extensive reconnaissance, credential theft via LSASS memory dumping, data staging and compression, exfiltration to cloud storage, establishment of persistence mechanisms, and anti-forensics activities. This investigation reconstructs the complete attack timeline and documents the threat actor's tactics, techniques, and procedures.
 
 ## Background
-- **Incident Date:** November 18-19, 2025  
-- **Compromised Host:** azuki-logistics  
+- **Incident Date:** November 21-22, 2025  
+- **Compromised Host:** azuki-fileserver01  
 - **Threat Actor:** ADE SPIDER (APT-SL44, SilentLynx)  
 - **Motivation:** Financial  
 - **Target Profile:** Logistics and import/export companies, East Asia region  
@@ -17,23 +17,23 @@ Azuki Import & Export Trading Co. experienced anomalous network activity and sus
 
 ## Investigation Steps
 
-### 1. Initial Access: Remote Access Source & Compromised User Account
+### 1. Initial Access: Return Connection Source
 
-Searched for remote interactive sessions from external sources during the incident timeframe to identify the origin of unauthorized access. The analysis revealed that the external IP address 88.97.178.12 established an RDP connection to azuki-logistics, marking the initial access point for the attack. In addition, discovered that the account that was compromised and used for initial RDP access was the user account kenji.sato.
+The attacker returned approximately 72 hours after the initial compromise using a different IP address to evade detection. The analysis revealed that the IP address 159.26.106.98 was the attacker's return connection. Since it's distinct from the original compromise IP, it's likely that the attacker attempted to utilize infrastructure rotation as an evasion technique.
 
 **Queries used to locate events:**
 
 ```kql
 DeviceLogonEvents
-| where TimeGenerated between (datetime(2025-11-18) .. datetime(2025-11-19))
-| where DeviceName has "azuki"
-| where LogonType == "RemoteInteractive"
+| where DeviceName contains "azuki"
+| where TimeGenerated between (datetime(2025-11-21) .. datetime(2025-11-24))
+| where ActionType == "LogonSuccess"
 | where isnotempty(RemoteIP)
-| project TimeGenerated, RemoteIP, DeviceName, AccountName
-| sort by TimeGenerated asc
+| project TimeGenerated, RemoteIP, AccountName, LogonType
+| order by TimeGenerated asc
 
 ```
-<img width="1839" height="310" alt="POE_QR1" src="https://github.com/user-attachments/assets/2e07843b-250d-432d-a249-cf0cdfd2ba27" />
+<img width="1923" height="637" alt="CH_Q1" src="https://github.com/user-attachments/assets/852e4110-1588-46ad-b8a4-19908d3ee061" />
 
 ---
 
