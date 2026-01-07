@@ -339,17 +339,11 @@ DeviceFileEvents
 
 ## Summary
 
-The investigation revealed a sophisticated multi-stage attack against Azuki Import & Export Trading Co. orchestrated by the ADE SPIDER threat actor group. The attack began with external RDP access using compromised credentials for user account kenji.sato from IP address 88.97.178.12. Following initial access, the attacker conducted network reconnaissance using arp commands to map the environment.
+The investigation revealed a sophisticated continuation of the initial Azuki Import & Export Trading Co. compromise. The attacker returned approximately 72 hours after initial access using a different source IP address (159.26.106.98), conducted lateral movement to the file server (azuki-fileserver01) using the compromised fileadmin account, and executed a multi-stage data exfiltration operation.
 
-The threat actor demonstrated advanced defense evasion capabilities by creating a hidden staging directory (C:\ProgramData\WindowsCache), adding three file extension exclusions (.bat, .ps1, .exe) to Windows Defender, and excluding the user's temporary folder from security scanning. Malware was downloaded using the legitimate certutil.exe utility, a classic Living Off The Land technique that evades detection.
+The threat actor demonstrated advanced tradecraft by conducting extensive reconnaissance (net share, net view, whoami /all, ipconfig /all), establishing a hidden staging directory (C:\Windows\Logs\CBS) disguised as Windows Component-Based Servicing logs, using Living Off the Land Binaries (certutil.exe, xcopy.exe, tar.exe, curl.exe) to avoid detection, renaming credential dumping tools (pd.exe) to evade signature-based detection, dumping LSASS memory to extract credentials, compressing stolen data into portable archives, exfiltrating data to file.io cloud storage, establishing registry-based persistence (FileShareSync) with a masqueraded beacon (svchost.ps1), and deleting PowerShell command history to remove forensic evidence.
 
-Persistence was established through multiple mechanisms including a scheduled task named "Windows Update Check" configured to execute malicious payloads daily with SYSTEM privileges, and creation of a backdoor administrator account named "support". The attacker deployed Mimikatz (renamed to mm.exe) to harvest credentials from LSASS memory using the sekurlsa::logonpasswords module.
-
-Command and control communications were established to infrastructure at 78.141.196.6 over port 443 (HTTPS), enabling the attacker to maintain control while blending with legitimate encrypted traffic. Stolen data was compressed into export-data.zip and exfiltrated via Discord webhooks using curl.exe, leveraging a trusted cloud service to bypass network security controls.
-
-The attack culminated in lateral movement to the file server (10.1.0.188) using stolen fileadmin credentials and the built-in mstsc.exe tool. Prior to disconnecting, the attacker systematically cleared Security, System, and Application event logs using wevtutil.exe to destroy forensic evidence. The attack automation was facilitated by a PowerShell script (wupdate.ps1) disguised as a Windows update utility.
-
-The sophistication of this attack, including the use of multiple persistence mechanisms, extensive anti-forensics, and preference for native Windows tools, is consistent with ADE SPIDER's known tactics, techniques, and procedures. The targeting of a logistics company in East Asia aligns with the group's established operational patterns and financial motivation.
+The attack specifically targeted IT administrative credentials stored in IT-Admin-Passwords.csv and successfully exfiltrated this sensitive data along with LSASS memory dumps containing cached credentials. The sophistication of this attack, including the use of multiple defense evasion techniques, persistence mechanisms, and anti-forensics measures, is consistent with ADE SPIDER's known tactics, techniques, and procedures. The targeting of a logistics company in East Asia aligns with the group's established operational patterns and financial motivation.
 
 ---
 
